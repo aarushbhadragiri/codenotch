@@ -53,6 +53,10 @@ At rest it is a small pill on the screen edge that unfolds when the pointer
 reaches it — configurable in Settings to always show, or to hide entirely.
 Settings live in an orb below the notch: an arc at rest, a gear on hover.
 
+Appearance settings include the notch visibility, screen edge, app presence, and
+accent colour. The device accent is the default; fixed presets are available for
+pink, red, blue, orange, off-white, and the original green.
+
 The app itself can show a Dock icon, a menu bar icon, or neither.
 
 ## Updates

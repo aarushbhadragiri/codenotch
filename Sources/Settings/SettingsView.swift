@@ -74,6 +74,19 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
+                LabeledContent("Accent color") {
+                    HStack(spacing: 7) {
+                        ForEach(AccentColorChoice.allCases) { choice in
+                            AccentColorSwatch(
+                                choice: choice,
+                                isSelected: preferences.accentColor == choice
+                            ) {
+                                preferences.accentColor = choice
+                            }
+                        }
+                    }
+                }
+
                 // "App icon", not "Icon": the two rows above it are about the
                 // notch, and on its own the word would read as another of them.
                 Picker("App icon", selection: $preferences.appPresence) {
@@ -136,6 +149,8 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .tint(preferences.accentColor.color)
+        .environment(\.codenotchAccentColor, preferences.accentColor.color)
         // Outside the form, so it stays put at the foot of the window rather
         // than scrolling away below the last section — a credit that has to be
         // hunted for is not really a credit.
@@ -228,6 +243,39 @@ struct SettingsView: View {
     }
 
 
+}
+
+/// A compact macOS-style colour choice. The outer ring makes pale colours and
+/// the selected state visible against either appearance.
+private struct AccentColorSwatch: View {
+    let choice: AccentColorChoice
+    let isSelected: Bool
+    let select: () -> Void
+
+    var body: some View {
+        Button(action: select) {
+            ZStack {
+                Circle()
+                    .fill(choice.color)
+                    .frame(width: 15, height: 15)
+                    .overlay {
+                        Circle().strokeBorder(.primary.opacity(0.18), lineWidth: 1)
+                    }
+
+                Circle()
+                    .strokeBorder(.primary, lineWidth: 1.5)
+                    .frame(width: 21, height: 21)
+                    .opacity(isSelected ? 1 : 0)
+            }
+            .frame(width: 24, height: 24)
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help(choice.title)
+        .accessibilityLabel(choice.title)
+        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
 }
 
 /// One provider: whether Codenotch reads it, whose account that is, and where

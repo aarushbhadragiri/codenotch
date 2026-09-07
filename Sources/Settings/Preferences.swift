@@ -26,6 +26,11 @@ final class Preferences: ObservableObject {
         didSet { defaults.set(notchEdge.rawValue, forKey: Keys.edge) }
     }
 
+    /// The colour used for positive usage and active-work indicators.
+    @Published var accentColor: AccentColorChoice {
+        didSet { defaults.set(accentColor.rawValue, forKey: Keys.accentColor) }
+    }
+
     /// Where the app itself shows up: Dock, menu bar, or nowhere.
     @Published var appPresence: AppPresence {
         didSet { defaults.set(appPresence.rawValue, forKey: Keys.presence) }
@@ -59,6 +64,7 @@ final class Preferences: ObservableObject {
         static let visibility = "notchVisibility"
         static let presence = "appPresence"
         static let edge = "notchEdge"
+        static let accentColor = "accentColor"
         static let lastSeenVersion = "lastSeenVersion"
     }
 
@@ -113,6 +119,9 @@ final class Preferences: ObservableObject {
         // side of a Mac that no system chrome claims by default.
         self.notchEdge = defaults.string(forKey: Keys.edge)
             .flatMap(NotchEdge.init(rawValue:)) ?? .right
+        // Follow the Mac unless the user explicitly chooses a Codenotch colour.
+        self.accentColor = defaults.string(forKey: Keys.accentColor)
+            .flatMap(AccentColorChoice.init(rawValue:)) ?? .system
         // Absent means nothing has been shown yet, which is true of a fresh
         // install — so the current release reads as new to it.
         self.lastSeenVersion = defaults.string(forKey: Keys.lastSeenVersion)

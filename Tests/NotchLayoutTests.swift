@@ -445,6 +445,28 @@ final class PreferencesTests: XCTestCase {
         XCTAssertFalse(Preferences(defaults: defaults).isConnected("codex"))
     }
 
+    func testAccentColorFollowsTheDeviceByDefault() {
+        XCTAssertEqual(preferences().accentColor, .system)
+    }
+
+    func testAccentColorChoiceSurvivesARestart() {
+        let name = "PreferencesAccentTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.removePersistentDomain(forName: name)
+
+        Preferences(defaults: defaults).accentColor = .pink
+        XCTAssertEqual(Preferences(defaults: defaults).accentColor, .pink)
+    }
+
+    func testUnknownAccentColorFallsBackToTheDevice() {
+        let name = "PreferencesAccentFallbackTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.removePersistentDomain(forName: name)
+        defaults.set("ultraviolet", forKey: "accentColor")
+
+        XCTAssertEqual(Preferences(defaults: defaults).accentColor, .system)
+    }
+
     /// The key is deliberately unchanged across the rename, so choices made
     /// before it survive.
     func testItReadsChoicesStoredUnderTheOldName() {

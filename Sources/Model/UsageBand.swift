@@ -21,9 +21,9 @@ enum UsageBand: Equatable {
         }
     }
 
-    var color: Color {
+    func color(accent: Color = Palette.ample) -> Color {
         switch self {
-        case .ample:                 return Palette.ample
+        case .ample:                 return accent
         case .watch:                 return Palette.watch
         case .critical, .exhausted:  return Palette.critical
         }

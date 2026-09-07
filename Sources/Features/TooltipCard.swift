@@ -232,6 +232,7 @@ private struct LimitWindowRow: View {
     let window: LimitWindow
     let fidelity: Fidelity
     let now: Date
+    @Environment(\.codenotchAccentColor) private var accentColor
 
     private var band: UsageBand { UsageBand.band(for: window.usedFraction ?? 0) }
     private var trackWidth: CGFloat { NotchLayout.cardWidth - 2 * NotchLayout.cardPadding }
@@ -254,7 +255,7 @@ private struct LimitWindowRow: View {
             if window.usedFraction != nil {
                 ZStack(alignment: .leading) {
                     Capsule().fill(Palette.barTrack)
-                    Capsule().fill(band.color).frame(width: fillWidth)
+                    Capsule().fill(band.color(accent: accentColor)).frame(width: fillWidth)
                 }
                 .frame(width: trackWidth, height: NotchLayout.barHeight)
                 .padding(.top, NotchLayout.labelToBar)
@@ -335,10 +336,11 @@ private struct BlockedRow: View {
 private struct SessionRow: View {
     let session: AgentSession
     let now: Date
+    @Environment(\.codenotchAccentColor) private var accentColor
 
     private var stateColor: Color {
         switch session.state {
-        case .busy:    return Palette.ample
+        case .busy:    return accentColor
         case .waiting: return Palette.watch
         case .idle:    return Palette.textSecondary
         }

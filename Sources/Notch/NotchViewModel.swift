@@ -40,6 +40,9 @@ final class NotchViewModel: ObservableObject {
     /// Which screen edge the notch is welded to. Everything geometric reads
     /// this through `placement` rather than assuming an axis.
     @Published var edge: NotchEdge = .right
+    /// Mirrors the persisted Appearance choice so the separate notch window
+    /// redraws immediately when Settings changes it.
+    @Published var accentColor: AccentColorChoice = .system
     /// The display's own notch, when this edge has to share the bezel with one.
     ///
     /// Set by the window controller from the screen the panel is on, because
