@@ -19,4 +19,12 @@ final class UsageBandTests: XCTestCase {
         XCTAssertEqual(UsageBand.band(for: 1.0), .exhausted)
         XCTAssertEqual(UsageBand.band(for: 1.4), .exhausted)
     }
+
+    func testAccentPersistsUntilTheLimitIsExhausted() {
+        let accent = Palette.ample
+        XCTAssertEqual(UsageBand.ample.color(accent: accent), accent)
+        XCTAssertEqual(UsageBand.watch.color(accent: accent), accent)
+        XCTAssertEqual(UsageBand.critical.color(accent: accent), accent)
+        XCTAssertEqual(UsageBand.exhausted.color(accent: accent), Palette.textPrimary)
+    }
 }

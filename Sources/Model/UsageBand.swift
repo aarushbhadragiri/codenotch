@@ -1,11 +1,11 @@
 import SwiftUI
 
-/// The colour a ring or bar takes at a given level of use.
+/// The state a ring or bar enters at a given level of use.
 ///
-/// The thresholds come from the mockup, which shows 21% green, 52% yellow and
-/// 73% orange. (The prose table in the design spec says 50–79 is yellow, which
-/// would make 73% yellow and contradict the frame it claims to describe — the
-/// frame wins.)
+/// The thresholds still drive exhausted-state treatment and leave room for
+/// other urgency cues, but colour belongs to the user's accent choice until a
+/// limit is completely spent. Exhausted usage turns white so it remains clear
+/// without replacing the chosen identity colour with a warning palette.
 enum UsageBand: Equatable {
     case ample       // under half
     case watch       // getting close
@@ -23,9 +23,8 @@ enum UsageBand: Equatable {
 
     func color(accent: Color = Palette.ample) -> Color {
         switch self {
-        case .ample:                 return accent
-        case .watch:                 return Palette.watch
-        case .critical, .exhausted:  return Palette.critical
+        case .ample, .watch, .critical: return accent
+        case .exhausted:                 return Palette.textPrimary
         }
     }
 }
