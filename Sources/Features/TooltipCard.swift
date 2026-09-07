@@ -1,33 +1,56 @@
 import SwiftUI
 
 /// The speech-bubble tail, its point aimed at the hovered cell.
+///
+/// Its shoulders leave the card tangent to the card's edge. That continuous
+/// tangent is what makes the two pieces read as one moulded silhouette rather
+/// than a triangle pasted onto a rounded rectangle.
 private struct TooltipTail: Shape {
     /// Which way the card sits relative to the notch — the tip points back the
     /// other way, at the cell.
     let direction: NotchEdge.TooltipDirection
 
     func path(in rect: CGRect) -> Path {
-        // The tip, and the two corners of the base opposite it.
-        let (tip, a, b): (CGPoint, CGPoint, CGPoint)
+        // The tip and the two ends of the base opposite it. Each curve starts
+        // or finishes parallel to the card edge, rounding both joins while the
+        // point stays crisp and continues to land on the hovered ring.
+        let (tip, a, b, aShoulder, aTip, bTip, bShoulder):
+            (CGPoint, CGPoint, CGPoint, CGPoint, CGPoint, CGPoint, CGPoint)
         switch direction {
         case .leading:   // card on the left, tip to the right
             tip = CGPoint(x: rect.maxX, y: rect.midY)
             (a, b) = (CGPoint(x: rect.minX, y: rect.minY), CGPoint(x: rect.minX, y: rect.maxY))
+            aShoulder = CGPoint(x: rect.minX, y: rect.minY + rect.height * 0.25)
+            aTip = CGPoint(x: rect.maxX - rect.width * 0.42, y: rect.midY - rect.height * 0.12)
+            bTip = CGPoint(x: rect.maxX - rect.width * 0.42, y: rect.midY + rect.height * 0.12)
+            bShoulder = CGPoint(x: rect.minX, y: rect.maxY - rect.height * 0.25)
         case .trailing:  // card on the right, tip to the left
             tip = CGPoint(x: rect.minX, y: rect.midY)
             (a, b) = (CGPoint(x: rect.maxX, y: rect.minY), CGPoint(x: rect.maxX, y: rect.maxY))
+            aShoulder = CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.25)
+            aTip = CGPoint(x: rect.minX + rect.width * 0.42, y: rect.midY - rect.height * 0.12)
+            bTip = CGPoint(x: rect.minX + rect.width * 0.42, y: rect.midY + rect.height * 0.12)
+            bShoulder = CGPoint(x: rect.maxX, y: rect.maxY - rect.height * 0.25)
         case .down:      // card below, tip upward
             tip = CGPoint(x: rect.midX, y: rect.minY)
             (a, b) = (CGPoint(x: rect.minX, y: rect.maxY), CGPoint(x: rect.maxX, y: rect.maxY))
+            aShoulder = CGPoint(x: rect.minX + rect.width * 0.25, y: rect.maxY)
+            aTip = CGPoint(x: rect.midX - rect.width * 0.12, y: rect.minY + rect.height * 0.42)
+            bTip = CGPoint(x: rect.midX + rect.width * 0.12, y: rect.minY + rect.height * 0.42)
+            bShoulder = CGPoint(x: rect.maxX - rect.width * 0.25, y: rect.maxY)
         case .up:        // card above, tip downward
             tip = CGPoint(x: rect.midX, y: rect.maxY)
             (a, b) = (CGPoint(x: rect.minX, y: rect.minY), CGPoint(x: rect.maxX, y: rect.minY))
+            aShoulder = CGPoint(x: rect.minX + rect.width * 0.25, y: rect.minY)
+            aTip = CGPoint(x: rect.midX - rect.width * 0.12, y: rect.maxY - rect.height * 0.42)
+            bTip = CGPoint(x: rect.midX + rect.width * 0.12, y: rect.maxY - rect.height * 0.42)
+            bShoulder = CGPoint(x: rect.maxX - rect.width * 0.25, y: rect.minY)
         }
 
         var path = Path()
         path.move(to: a)
-        path.addLine(to: tip)
-        path.addLine(to: b)
+        path.addCurve(to: tip, control1: aShoulder, control2: aTip)
+        path.addCurve(to: b, control1: bTip, control2: bShoulder)
         path.closeSubpath()
         return path
     }
