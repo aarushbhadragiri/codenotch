@@ -50,3 +50,34 @@ final class TooltipRenderTests: XCTestCase {
         }
     }
 }
+
+final class TooltipTailShapeTests: XCTestCase {
+    func testEveryTailUsesCurvesAtTheCardJoin() {
+        for direction in [NotchEdge.TooltipDirection.leading, .trailing, .up, .down] {
+            let size = TooltipTail.size(for: direction)
+            let path = TooltipTail(direction: direction)
+                .path(in: CGRect(origin: .zero, size: size))
+                .cgPath
+            var curves = 0
+            path.applyWithBlock { element in
+                if element.pointee.type == .addCurveToPoint { curves += 1 }
+            }
+            XCTAssertEqual(curves, 2, "\(direction): the tail fell back to sharp shoulders")
+        }
+    }
+
+    func testEveryTailStillReachesItsCellFacingEdge() {
+        for direction in [NotchEdge.TooltipDirection.leading, .trailing, .up, .down] {
+            let size = TooltipTail.size(for: direction)
+            let bounds = TooltipTail(direction: direction)
+                .path(in: CGRect(origin: .zero, size: size))
+                .boundingRect
+            XCTAssertEqual(bounds.minX, 0, accuracy: 0.001, "\(direction)")
+            XCTAssertEqual(bounds.minY, 0, accuracy: 0.001, "\(direction)")
+            XCTAssertEqual(bounds.width, size.width, accuracy: 0.001,
+                           "\(direction): rounding moved the tail tip or card join")
+            XCTAssertEqual(bounds.height, size.height, accuracy: 0.001,
+                           "\(direction): rounding moved the tail tip or card join")
+        }
+    }
+}

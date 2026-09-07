@@ -122,6 +122,9 @@ enum NotchLayout {
     static let cardPadding   = Design.px(32)
     static let tailLength    = Design.px(75)
     static let tailHeight    = Design.px(87)
+    /// Rounds the tail into the card instead of exposing the triangle's two
+    /// hard shoulders. Measured from the curved join in the reference frame.
+    static let tailShoulder  = Design.px(22)
     static let tailGap       = Design.px(28)    // tail tip -> notch body edge
     static let barHeight     = Design.px(10.5)
     static let headerGap     = Design.px(17)    // glyph -> title

@@ -1,35 +1,53 @@
 import SwiftUI
 
 /// The speech-bubble tail, its point aimed at the hovered cell.
-private struct TooltipTail: Shape {
+struct TooltipTail: Shape {
     /// Which way the card sits relative to the notch — the tip points back the
     /// other way, at the cell.
     let direction: NotchEdge.TooltipDirection
 
     func path(in rect: CGRect) -> Path {
-        // The tip, and the two corners of the base opposite it.
-        let (tip, a, b): (CGPoint, CGPoint, CGPoint)
-        switch direction {
-        case .leading:   // card on the left, tip to the right
-            tip = CGPoint(x: rect.maxX, y: rect.midY)
-            (a, b) = (CGPoint(x: rect.minX, y: rect.minY), CGPoint(x: rect.minX, y: rect.maxY))
-        case .trailing:  // card on the right, tip to the left
-            tip = CGPoint(x: rect.minX, y: rect.midY)
-            (a, b) = (CGPoint(x: rect.maxX, y: rect.minY), CGPoint(x: rect.maxX, y: rect.maxY))
-        case .down:      // card below, tip upward
-            tip = CGPoint(x: rect.midX, y: rect.minY)
-            (a, b) = (CGPoint(x: rect.minX, y: rect.maxY), CGPoint(x: rect.maxX, y: rect.maxY))
-        case .up:        // card above, tip downward
-            tip = CGPoint(x: rect.midX, y: rect.maxY)
-            (a, b) = (CGPoint(x: rect.minX, y: rect.minY), CGPoint(x: rect.maxX, y: rect.minY))
-        }
+        // Draw once with the card on the left and rotate that silhouette onto
+        // the other three edges. The first control point leaves each shoulder
+        // tangent to the card face, so the join has no visible corner.
+        let length = direction == .leading || direction == .trailing
+            ? rect.width : rect.height
+        let breadth = direction == .leading || direction == .trailing
+            ? rect.height : rect.width
+        let shoulder = min(NotchLayout.tailShoulder, length / 2, breadth / 3)
 
         var path = Path()
-        path.move(to: a)
-        path.addLine(to: tip)
-        path.addLine(to: b)
+        path.move(to: CGPoint(x: 0, y: 0))
+        path.addCurve(
+            to: CGPoint(x: length, y: breadth / 2),
+            control1: CGPoint(x: 0, y: shoulder),
+            control2: CGPoint(x: length - shoulder, y: breadth / 2 - shoulder / 2)
+        )
+        path.addCurve(
+            to: CGPoint(x: 0, y: breadth),
+            control1: CGPoint(x: length - shoulder, y: breadth / 2 + shoulder / 2),
+            control2: CGPoint(x: 0, y: breadth - shoulder)
+        )
         path.closeSubpath()
+
+        let transform: CGAffineTransform
+        switch direction {
+        case .leading:   // card on the left, tip to the right
+            transform = .identity
+        case .trailing:  // card on the right, tip to the left
+            transform = CGAffineTransform(a: -1, b: 0, c: 0, d: 1,
+                                          tx: rect.width, ty: 0)
+        case .up:        // card above, tip downward
+            transform = CGAffineTransform(a: 0, b: 1, c: 1, d: 0,
+                                          tx: 0, ty: 0)
+        case .down:      // card below, tip upward
+            transform = CGAffineTransform(a: 0, b: -1, c: 1, d: 0,
+                                          tx: 0, ty: rect.height)
+        }
+
         return path
+            .applying(transform)
+            .applying(CGAffineTransform(translationX: rect.minX, y: rect.minY))
     }
 
     /// Long in the direction it points, wide across it.
