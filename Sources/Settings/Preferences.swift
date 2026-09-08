@@ -41,6 +41,14 @@ final class Preferences: ObservableObject {
         didSet { defaults.set(hoverBlurStrength, forKey: Keys.hoverBlurStrength) }
     }
 
+    @Published var hapticFeedback: Bool {
+        didSet { defaults.set(hapticFeedback, forKey: Keys.hapticFeedback) }
+    }
+
+    @Published var hapticDetailLevel: HapticDetailLevel {
+        didSet { defaults.set(hapticDetailLevel.rawValue, forKey: Keys.hapticDetailLevel) }
+    }
+
     /// Where the app itself shows up: Dock, menu bar, or nowhere.
     @Published var appPresence: AppPresence {
         didSet { defaults.set(appPresence.rawValue, forKey: Keys.presence) }
@@ -77,6 +85,8 @@ final class Preferences: ObservableObject {
         static let accentColor = "accentColor"
         static let hoverBlur = "hoverBlur"
         static let hoverBlurStrength = "hoverBlurStrength"
+        static let hapticFeedback = "hapticFeedback"
+        static let hapticDetailLevel = "hapticDetailLevel"
         static let lastSeenVersion = "lastSeenVersion"
     }
 
@@ -118,6 +128,9 @@ final class Preferences: ObservableObject {
         self.hoverBlurStrength = min(
             max(defaults.object(forKey: Keys.hoverBlurStrength) as? Double ?? 0, 0), 1
         )
+        self.hapticFeedback = defaults.object(forKey: Keys.hapticFeedback) as? Bool ?? true
+        self.hapticDetailLevel = defaults.string(forKey: Keys.hapticDetailLevel)
+            .flatMap(HapticDetailLevel.init(rawValue:)) ?? .full
         self.isFirstLaunch = !defaults.bool(forKey: Keys.hasLaunched)
         defaults.set(true, forKey: Keys.hasLaunched)
         self.disconnectedProviders = Set(defaults.stringArray(forKey: Keys.disconnected) ?? [])

@@ -127,6 +127,26 @@ struct SettingsView: View {
             // without being asked, and one switch under its own header looked
             // like an oversight rather than a section.
             Section("General") {
+                Picker("Haptic feedback", selection: $preferences.hapticFeedback) {
+                    Text("Off").tag(false)
+                    Text("On").tag(true)
+                }
+                .pickerStyle(.segmented)
+
+                if preferences.hapticFeedback {
+                    Picker("Haptic detail", selection: $preferences.hapticDetailLevel) {
+                        ForEach(HapticDetailLevel.allCases) { level in
+                            Text(level.title).tag(level)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    Text("Minimal confirms refresh actions. Full also responds to opening and moving through the notch.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
                 Toggle("Open Codenotch at login", isOn: $preferences.launchAtLogin)
                 if let problem = preferences.launchAtLoginProblem {
                     Text(problem)

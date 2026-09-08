@@ -378,8 +378,12 @@ final class SingleProviderRefreshTests: XCTestCase {
         let displayName = "Stub"
         let glyph = ProviderGlyph.claude
         private(set) var calls = 0
+        let shouldFail: Bool
 
-        init(id: String) { self.id = id }
+        init(id: String, shouldFail: Bool = false) {
+            self.id = id
+            self.shouldFail = shouldFail
+        }
 
         func forgetCalls() { calls = 0 }
 
@@ -388,6 +392,7 @@ final class SingleProviderRefreshTests: XCTestCase {
 
         func fetchSnapshot() async throws -> ProviderSnapshot {
             calls += 1
+            if shouldFail { throw UsageProviderError.badResponse(status: 500) }
             return ProviderSnapshot(id: id, displayName: displayName, glyph: glyph,
                                     fidelity: .official, status: .ok,
                                     windows: [LimitWindow(id: "w", label: "W", usedFraction: 0.5)])
@@ -439,6 +444,28 @@ final class SingleProviderRefreshTests: XCTestCase {
         let store = store([CountingProvider(id: "a")])
         store.refresh(providerID: "nope")
         XCTAssertTrue(store.refreshing.isEmpty)
+    }
+
+    func testManualRefreshReportsOnlyARealFetchAsSuccessful() async {
+        let provider = CountingProvider(id: "a")
+        let store = store([provider])
+        var result: Bool?
+
+        store.refresh(providerID: "a") { result = $0 }
+        try? await Task.sleep(nanoseconds: 500_000_000)
+
+        XCTAssertEqual(result, true)
+    }
+
+    func testManualRefreshFailureDoesNotReportSuccess() async {
+        let provider = CountingProvider(id: "a", shouldFail: true)
+        let store = store([provider])
+        var result: Bool?
+
+        store.refresh(providerID: "a") { result = $0 }
+        try? await Task.sleep(nanoseconds: 500_000_000)
+
+        XCTAssertEqual(result, false)
     }
 }
 
