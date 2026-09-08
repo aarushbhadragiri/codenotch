@@ -82,6 +82,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // right-hand one and then crossfades away from it.
             controller.model.edge = preferences.notchEdge
             controller.model.accentColor = preferences.accentColor
+            controller.model.hoverBlur = preferences.hoverBlur
+            controller.model.hoverBlurStrength = preferences.hoverBlurStrength
 
             let updater = Updater()
             self.updater = updater
@@ -150,6 +152,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             preferences.$accentColor
                 .receive(on: RunLoop.main)
                 .sink { [weak controller] in controller?.model.accentColor = $0 }
+                .store(in: &cancellables)
+
+            preferences.$hoverBlur
+                .receive(on: RunLoop.main)
+                .sink { [weak controller] in controller?.model.hoverBlur = $0 }
+                .store(in: &cancellables)
+
+            preferences.$hoverBlurStrength
+                .receive(on: RunLoop.main)
+                .sink { [weak controller] in controller?.model.hoverBlurStrength = $0 }
                 .store(in: &cancellables)
 
             preferences.$disconnectedProviders

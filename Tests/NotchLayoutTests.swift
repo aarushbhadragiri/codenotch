@@ -458,6 +458,16 @@ final class PreferencesTests: XCTestCase {
         XCTAssertEqual(Preferences(defaults: defaults).accentColor, .pink)
     }
 
+    func testHoverBlurStrengthUsesTheOriginalBlurAsItsBaselineAndPersists() {
+        let name = "PreferencesHoverBlurStrengthTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.removePersistentDomain(forName: name)
+
+        XCTAssertEqual(Preferences(defaults: defaults).hoverBlurStrength, 0)
+        Preferences(defaults: defaults).hoverBlurStrength = 0.72
+        XCTAssertEqual(Preferences(defaults: defaults).hoverBlurStrength, 0.72)
+    }
+
     func testUnknownAccentColorFallsBackToTheDevice() {
         let name = "PreferencesAccentFallbackTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: name)!

@@ -64,6 +64,29 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
+                if preferences.notchVisibility == .onHover {
+                    Picker("Blur", selection: $preferences.hoverBlur) {
+                        Text("Off").tag(false)
+                        Text("On").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+
+                    if preferences.hoverBlur {
+                        LabeledContent("Strength") {
+                            Slider(value: $preferences.hoverBlurStrength, in: 0...1)
+                        }
+
+                        HStack {
+                            Text("Current blur")
+                            Spacer()
+                            Text("Opaque")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, 120)
+                    }
+                }
+
                 Picker("Edge", selection: $preferences.notchEdge) {
                     ForEach(NotchEdge.allCases) { Text($0.title).tag($0) }
                 }
