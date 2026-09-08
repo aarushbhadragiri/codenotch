@@ -34,6 +34,12 @@ final class NotchFleet {
     private var accentColor: AccentColorChoice = .system
     private var notchBlurEnabled = false
     private var notchBlurStrength = Preferences.defaultNotchBlurStrength
+    private var collapsedNotchWidth = Design.px(
+        CGFloat(Preferences.defaultCollapsedNotchWidthPixels)
+    )
+    private var collapsedNotchLength = Design.px(
+        CGFloat(Preferences.defaultCollapsedNotchLengthPixels)
+    )
     /// The ⌥-drag nudge along the current edge. One value for the whole
     /// fleet, the same as `edge` itself — displays do not each get their own
     /// edge, so they do not each get their own nudge either.
@@ -148,6 +154,20 @@ final class NotchFleet {
         notchBlurStrength = strength
         for controller in controllers.values {
             controller.model.notchBlurStrength = strength
+        }
+    }
+
+    func apply(collapsedNotchWidthPixels width: Double) {
+        collapsedNotchWidth = Design.px(CGFloat(width))
+        for controller in controllers.values {
+            controller.apply(collapsedNotchWidth: collapsedNotchWidth)
+        }
+    }
+
+    func apply(collapsedNotchLengthPixels length: Double) {
+        collapsedNotchLength = Design.px(CGFloat(length))
+        for controller in controllers.values {
+            controller.apply(collapsedNotchLength: collapsedNotchLength)
         }
     }
 
@@ -287,6 +307,8 @@ final class NotchFleet {
         controller.model.accentColor = accentColor
         controller.model.notchBlurEnabled = notchBlurEnabled
         controller.model.notchBlurStrength = notchBlurStrength
+        controller.model.collapsedNotchWidth = collapsedNotchWidth
+        controller.model.collapsedNotchLength = collapsedNotchLength
         controller.onRefresh = onRefresh
         controller.onRefreshProvider = onRefreshProvider
         controller.onOpenSettings = onOpenSettings

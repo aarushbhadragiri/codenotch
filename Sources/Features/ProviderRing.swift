@@ -30,7 +30,7 @@ struct ProviderRing: View {
     }
     private var sweep: CGFloat { CGFloat(min(max(usedFraction ?? 0, 0), 1)) }
     private var progressColor: Color {
-        UsageBand.providerRingColor(for: usedFraction ?? 0, accent: accentColor)
+        UsageBand.usageIndicatorColor(for: usedFraction ?? 0, accent: accentColor)
     }
 
     var body: some View {

@@ -157,6 +157,21 @@ final class FoldedNotchTests: XCTestCase {
         XCTAssertEqual(openCentre, foldedCentre, accuracy: 0.001)
     }
 
+    func testFoldedDimensionsFollowTheUserChoice() {
+        let m = model(cells: 3)
+        m.collapsedNotchWidth = 24
+        m.collapsedNotchLength = 112
+
+        XCTAssertEqual(m.restingDepth, 24)
+        XCTAssertEqual(m.restingLength, 112)
+        XCTAssertEqual(m.notchDepth, 24)
+        XCTAssertEqual(m.notchLength, 112)
+
+        m.isExpanded = true
+        XCTAssertEqual(m.notchDepth, NotchLayout.bodyDepth(for: m.edge), accuracy: 0.001)
+        XCTAssertEqual(m.notchLength, m.shapeLength, accuracy: 0.001)
+    }
+
     /// The panel never resizes for the fold: animating a window frame is jerky,
     /// and the reserved space is transparent anyway.
     func testThePanelIsTheSameSizeEitherWay() {
@@ -495,6 +510,35 @@ final class PreferencesTests: XCTestCase {
         Preferences(defaults: defaults).hapticDetailLevel = .minimal
         XCTAssertFalse(Preferences(defaults: defaults).hapticFeedback)
         XCTAssertEqual(Preferences(defaults: defaults).hapticDetailLevel, .minimal)
+    }
+
+    func testCollapsedNotchSizeDefaultsAndSurvivesARestart() {
+        let defaults = scratchDefaults()
+        let preferences = Preferences(defaults: defaults)
+
+        XCTAssertEqual(preferences.collapsedNotchWidthPixels,
+                       Preferences.defaultCollapsedNotchWidthPixels)
+        XCTAssertEqual(preferences.collapsedNotchLengthPixels,
+                       Preferences.defaultCollapsedNotchLengthPixels)
+
+        preferences.collapsedNotchWidthPixels = 42
+        preferences.collapsedNotchLengthPixels = 280
+
+        let restored = Preferences(defaults: defaults)
+        XCTAssertEqual(restored.collapsedNotchWidthPixels, 42)
+        XCTAssertEqual(restored.collapsedNotchLengthPixels, 280)
+    }
+
+    func testStoredCollapsedNotchSizeIsClampedToSafeRanges() {
+        let defaults = scratchDefaults()
+        defaults.set(2.0, forKey: "collapsedNotchWidthPixels")
+        defaults.set(900.0, forKey: "collapsedNotchLengthPixels")
+
+        let preferences = Preferences(defaults: defaults)
+        XCTAssertEqual(preferences.collapsedNotchWidthPixels,
+                       Preferences.collapsedNotchWidthRange.lowerBound)
+        XCTAssertEqual(preferences.collapsedNotchLengthPixels,
+                       Preferences.collapsedNotchLengthRange.upperBound)
     }
 
     func testUnknownAccentColorFallsBackToTheDevice() {

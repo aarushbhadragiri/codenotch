@@ -215,6 +215,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 .sink { [weak fleet] in fleet?.apply(notchBlurStrength: $0) }
                 .store(in: &cancellables)
 
+            preferences.$collapsedNotchWidthPixels
+                .receive(on: RunLoop.main)
+                .sink { [weak fleet] in fleet?.apply(collapsedNotchWidthPixels: $0) }
+                .store(in: &cancellables)
+
+            preferences.$collapsedNotchLengthPixels
+                .receive(on: RunLoop.main)
+                .sink { [weak fleet] in fleet?.apply(collapsedNotchLengthPixels: $0) }
+                .store(in: &cancellables)
+
             preferences.$hapticFeedback
                 .receive(on: RunLoop.main)
                 .sink { haptics.isEnabled = $0 }
@@ -341,6 +351,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fleet.apply(accentColor: preferences.accentColor)
         fleet.apply(notchBlurEnabled: preferences.notchBlurEnabled)
         fleet.apply(notchBlurStrength: preferences.notchBlurStrength)
+        fleet.apply(collapsedNotchWidthPixels: preferences.collapsedNotchWidthPixels)
+        fleet.apply(collapsedNotchLengthPixels: preferences.collapsedNotchLengthPixels)
         fleet.show()
     }
 

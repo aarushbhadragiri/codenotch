@@ -33,11 +33,10 @@ enum UsageBand: Equatable {
         }
     }
 
-    /// Provider rings are identity indicators, not warnings. Their arc stays
-    /// in the chosen accent throughout the usable range and becomes white only
-    /// when the reported limit is fully exhausted. Tooltip bars still use the
-    /// semantic bands above, where several windows need to be compared.
-    static func providerRingColor(for usedFraction: Double, accent: Color) -> Color {
+    /// Provider usage indicators are identity indicators, not warnings. Rings
+    /// and tooltip bars stay in the chosen accent throughout the usable range
+    /// and become white only when the reported limit is fully exhausted.
+    static func usageIndicatorColor(for usedFraction: Double, accent: Color) -> Color {
         usedFraction >= 1 ? Palette.textPrimary : accent
     }
 }

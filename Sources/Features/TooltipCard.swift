@@ -258,7 +258,6 @@ private struct LimitWindowRow: View {
     let resetTimeFormat: ResetTimeFormat
     @Environment(\.codenotchAccentColor) private var accentColor
 
-    private var band: UsageBand { UsageBand.band(for: window.usedFraction ?? 0) }
     private var trackWidth: CGFloat { NotchLayout.cardWidth - 2 * NotchLayout.cardPadding }
     private var fillWidth: CGFloat {
         let fraction = CGFloat(min(max(window.usedFraction ?? 0, 0), 1))
@@ -279,7 +278,12 @@ private struct LimitWindowRow: View {
             if window.usedFraction != nil {
                 ZStack(alignment: .leading) {
                     Capsule().fill(Palette.barTrack)
-                    Capsule().fill(band.color(accent: accentColor)).frame(width: fillWidth)
+                    Capsule()
+                        .fill(UsageBand.usageIndicatorColor(
+                            for: window.usedFraction ?? 0,
+                            accent: accentColor
+                        ))
+                        .frame(width: fillWidth)
                 }
                 .frame(width: trackWidth, height: NotchLayout.barHeight)
                 .padding(.top, NotchLayout.labelToBar)

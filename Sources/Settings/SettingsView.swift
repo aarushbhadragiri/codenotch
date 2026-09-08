@@ -682,6 +682,24 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Collapsed notch size") {
+                notchSizeControl(
+                    label: "Width",
+                    value: collapsedNotchWidthBinding,
+                    range: Preferences.collapsedNotchWidthRange
+                )
+                notchSizeControl(
+                    label: "Length",
+                    value: collapsedNotchLengthBinding,
+                    range: Preferences.collapsedNotchLengthRange
+                )
+
+                Text("Controls the resting handle only. The expanded notch and a MacBook's built-in display notch keep their native dimensions.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             // An ordinary row here, not a bar pinned across every pane —
             // that cost every pane a strip of height for one line that only
             // ever matters on this one, and "blocking the UI" is exactly
@@ -704,6 +722,62 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+    }
+
+    private var collapsedNotchWidthBinding: Binding<Double> {
+        boundedPixelBinding(
+            get: { preferences.collapsedNotchWidthPixels },
+            set: { preferences.collapsedNotchWidthPixels = $0 },
+            range: Preferences.collapsedNotchWidthRange
+        )
+    }
+
+    private var collapsedNotchLengthBinding: Binding<Double> {
+        boundedPixelBinding(
+            get: { preferences.collapsedNotchLengthPixels },
+            set: { preferences.collapsedNotchLengthPixels = $0 },
+            range: Preferences.collapsedNotchLengthRange
+        )
+    }
+
+    private func boundedPixelBinding(
+        get: @escaping () -> Double,
+        set: @escaping (Double) -> Void,
+        range: ClosedRange<Double>
+    ) -> Binding<Double> {
+        Binding(
+            get: get,
+            set: { value in
+                set(min(max(value.rounded(), range.lowerBound), range.upperBound))
+            }
+        )
+    }
+
+    @ViewBuilder
+    private func notchSizeControl(
+        label: String,
+        value: Binding<Double>,
+        range: ClosedRange<Double>
+    ) -> some View {
+        LabeledContent(label) {
+            HStack(spacing: 8) {
+                Slider(value: value, in: range, step: 1)
+                    .frame(minWidth: 180)
+
+                TextField(
+                    "\(label) in pixels",
+                    value: value,
+                    format: .number.precision(.fractionLength(0))
+                )
+                .textFieldStyle(.roundedBorder)
+                .multilineTextAlignment(.trailing)
+                .monospacedDigit()
+                .frame(width: 54)
+
+                Text("px")
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 
     private func refreshVisibleState() {

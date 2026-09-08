@@ -129,6 +129,16 @@ final class NotchWindowController {
         mouseMonitors.removeAll()
     }
 
+    func apply(collapsedNotchWidth width: CGFloat) {
+        model.collapsedNotchWidth = width
+        updateInteractiveRects()
+    }
+
+    func apply(collapsedNotchLength length: CGFloat) {
+        model.collapsedNotchLength = length
+        updateInteractiveRects()
+    }
+
     // MARK: - Placement
 
     /// The screen this notch lives on: its assigned display while that display

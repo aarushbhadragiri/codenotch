@@ -115,6 +115,23 @@ final class Preferences: ObservableObject {
         didSet { defaults.set(hapticDetailLevel.rawValue, forKey: Keys.hapticDetailLevel) }
     }
 
+    /// The resting handle's thickness, expressed in the same design pixels the
+    /// settings control shows. Keeping the stored value in pixels means the
+    /// text field round-trips exactly instead of exposing scaled point values.
+    @Published var collapsedNotchWidthPixels: Double {
+        didSet { defaults.set(collapsedNotchWidthPixels, forKey: Keys.collapsedNotchWidth) }
+    }
+
+    /// The resting handle's span along the selected screen edge.
+    @Published var collapsedNotchLengthPixels: Double {
+        didSet { defaults.set(collapsedNotchLengthPixels, forKey: Keys.collapsedNotchLength) }
+    }
+
+    static let collapsedNotchWidthRange: ClosedRange<Double> = 16...80
+    static let collapsedNotchLengthRange: ClosedRange<Double> = 120...360
+    static let defaultCollapsedNotchWidthPixels = 26.0
+    static let defaultCollapsedNotchLengthPixels = 210.0
+
     /// Where the app itself shows up: Dock, menu bar, or nowhere.
     @Published var appPresence: AppPresence {
         didSet { defaults.set(appPresence.rawValue, forKey: Keys.presence) }
@@ -213,6 +230,8 @@ final class Preferences: ObservableObject {
         static let notchBlurStrength = "notchBlurStrength"
         static let hapticFeedback = "hapticFeedback"
         static let hapticDetailLevel = "hapticDetailLevel"
+        static let collapsedNotchWidth = "collapsedNotchWidthPixels"
+        static let collapsedNotchLength = "collapsedNotchLengthPixels"
         static let lastSeenVersion = "lastSeenVersion"
         static let order = "providerOrder"
         static let announceSessionEnd = "announceSessionEnd"
@@ -311,6 +330,16 @@ final class Preferences: ObservableObject {
         self.hapticFeedback = defaults.object(forKey: Keys.hapticFeedback) as? Bool ?? true
         self.hapticDetailLevel = defaults.string(forKey: Keys.hapticDetailLevel)
             .flatMap(HapticDetailLevel.init(rawValue:)) ?? .full
+        self.collapsedNotchWidthPixels = Self.clamped(
+            defaults.object(forKey: Keys.collapsedNotchWidth) as? Double
+                ?? Self.defaultCollapsedNotchWidthPixels,
+            to: Self.collapsedNotchWidthRange
+        )
+        self.collapsedNotchLengthPixels = Self.clamped(
+            defaults.object(forKey: Keys.collapsedNotchLength) as? Double
+                ?? Self.defaultCollapsedNotchLengthPixels,
+            to: Self.collapsedNotchLengthRange
+        )
         // Absent means nothing has been shown yet, which is true of a fresh
         // install — so the current release reads as new to it.
         self.lastSeenVersion = defaults.string(forKey: Keys.lastSeenVersion)
@@ -331,6 +360,10 @@ final class Preferences: ObservableObject {
         // Read from the system rather than from our own store: the user can turn
         // this off in System Settings, and a remembered `true` would then be a lie.
         self.launchAtLogin = Self.isRegisteredForLogin
+    }
+
+    private static func clamped(_ value: Double, to range: ClosedRange<Double>) -> Double {
+        min(max(value, range.lowerBound), range.upperBound)
     }
 
     // MARK: Threshold alerts

@@ -63,6 +63,14 @@ final class NotchViewModel: ObservableObject {
     /// One is Apple's unmodified Liquid Glass recipe; the user may make it
     /// subtler or add a denser frosted tint around that baseline.
     @Published var notchBlurStrength: Double = Preferences.defaultNotchBlurStrength
+    /// User-controlled dimensions of the folded handle. Hardware-notch mode
+    /// still uses the display's physical notch exactly.
+    @Published var collapsedNotchWidth = Design.px(
+        CGFloat(Preferences.defaultCollapsedNotchWidthPixels)
+    )
+    @Published var collapsedNotchLength = Design.px(
+        CGFloat(Preferences.defaultCollapsedNotchLengthPixels)
+    )
     /// The display's own notch, when this edge has to share the bezel with one.
     ///
     /// Set by the window controller from the screen the panel is on, because
@@ -341,19 +349,19 @@ final class NotchViewModel: ObservableObject {
     /// for it makes the notch itself grow.
     var notchLength: CGFloat {
         if isExpanded { return shapeLength }
-        return hardwareNotch?.width ?? NotchLayout.pillHeight
+        return hardwareNotch?.width ?? collapsedNotchLength
     }
 
     /// And across it.
     var notchDepth: CGFloat {
         if isExpanded { return contentInset + NotchLayout.bodyDepth(for: edge) }
-        return hardwareNotch?.height ?? NotchLayout.pillWidth
+        return hardwareNotch?.height ?? collapsedNotchWidth
     }
 
     /// What the notch folds away to, whether or not it is open right now —
     /// the hit region has to know that while the notch is still open.
-    var restingLength: CGFloat { hardwareNotch?.width ?? NotchLayout.pillHeight }
-    var restingDepth: CGFloat { hardwareNotch?.height ?? NotchLayout.pillWidth }
+    var restingLength: CGFloat { hardwareNotch?.width ?? collapsedNotchLength }
+    var restingDepth: CGFloat { hardwareNotch?.height ?? collapsedNotchWidth }
 
     /// The drawn size of the notch body, in panel axes.
     var notchSize: CGSize {
