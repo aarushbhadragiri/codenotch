@@ -208,16 +208,7 @@ struct SettingsView: View {
     private var credit: some View {
         VStack(spacing: 0) {
             Divider()
-            HStack(spacing: 4) {
-                Text("App designed and developed by")
-                // Only the handle is the link, so the line reads as a sentence
-                // rather than as a button with a sentence attached.
-                Link("@hivinz_", destination: SettingsView.authorURL)
-                    // A link that does not change the pointer reads as text.
-                    .onHover { inside in
-                        if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
-                    }
-            }
+            Text(Self.creditText)
             .font(.caption)
             .foregroundStyle(.secondary)
             .padding(.vertical, 10)
@@ -226,7 +217,7 @@ struct SettingsView: View {
         .background(.ultraThinMaterial)
     }
 
-    static let authorURL = URL(string: "https://x.com/hivinz_")!
+    static let creditText = "App designed and developed for mac"
 
     /// Narrower than the tabbed version needed: without a row of tab titles to
     /// fit, the width is set by the account rows alone.
