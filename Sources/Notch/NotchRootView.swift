@@ -3,6 +3,7 @@ import SwiftUI
 struct NotchRootView: View {
     @ObservedObject var model: NotchViewModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
         // Measured rather than assumed: the panel's real size is whatever
@@ -13,6 +14,31 @@ struct NotchRootView: View {
 
             ZStack(alignment: .topLeading) {
                 Color.clear
+
+                // A backdrop layer belonging only to the notch. The popup is
+                // drawn later, so its text and silhouette stay crisp.
+                if model.hoverBlur && !model.isAlwaysOn && !reduceTransparency {
+                    NotchBackdropBlur()
+                        .mask {
+                            SideNotchShape(edge: model.edge, joining: model.joinedNotch)
+                                .fill(.white)
+                                .frame(width: model.notchSize.width, height: model.notchSize.height)
+                                .blur(radius: 18)
+                                .position(place.point(
+                                    along: model.notchLeadingInset + model.notchLength / 2,
+                                    across: model.notchDepth / 2
+                                ))
+                        }
+                        // Keep the physical camera band free of material,
+                        // including the feather around its corner cutouts.
+                        .mask(alignment: .bottom) {
+                            Rectangle()
+                                .padding(.top, model.contentInset)
+                        }
+                        .opacity(model.isExpanded ? 1 : 0)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
 
                 notch(place)
 
@@ -202,4 +228,19 @@ struct NotchRootView: View {
             across: model.tooltipInset + (NotchLayout.tailLength + card) / 2
         )
     }
+}
+
+/// Public AppKit backdrop sampling blurs other windows without screen capture.
+/// The SwiftUI mask feathers its contribution to zero away from the notch.
+private struct NotchBackdropBlur: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.blendingMode = .behindWindow
+        view.material = .hudWindow
+        view.state = .active
+        view.isEmphasized = false
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
 }
