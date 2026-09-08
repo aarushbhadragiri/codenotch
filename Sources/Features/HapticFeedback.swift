@@ -29,9 +29,8 @@ enum CodenotchHapticEvent: Hashable {
 
     var pattern: NSHapticFeedbackManager.FeedbackPattern {
         switch self {
-        case .sliderBoundary, .integrationToggled: .alignment
-        case .enteredNotch, .providerChanged, .settingsOpened, .refreshRequested,
-             .dragBump(.medium): .levelChange
+        case .enteredNotch, .providerChanged, .sliderBoundary, .integrationToggled: .alignment
+        case .settingsOpened, .refreshRequested, .dragBump(.medium): .levelChange
         case .dragBump(.strong): .generic
         }
     }
@@ -94,7 +93,7 @@ final class HapticFeedbackService {
         switch usedFraction {
         case 1...: count = 3; pattern = .generic
         case 0.75..<1: count = 3; pattern = .levelChange
-        case 0.5..<0.75: count = 2; pattern = .levelChange
+        case 0.5.nextUp..<0.75: count = 2; pattern = .levelChange
         default: count = 1; pattern = .levelChange
         }
         for index in 0..<count {

@@ -99,4 +99,16 @@ final class HapticFeedbackTests: XCTestCase {
 
         XCTAssertEqual(patterns, [.generic, .generic, .generic])
     }
+
+    func testExactlyHalfUsedProducesOneClick() {
+        var scheduled: [() -> Void] = []
+        let service = HapticFeedbackService(
+            reduceMotion: { false }, perform: { _ in },
+            schedule: { _, action in scheduled.append(action) }
+        )
+
+        service.playRefreshCompletion(usedFraction: 0.5)
+
+        XCTAssertEqual(scheduled.count, 1)
+    }
 }
