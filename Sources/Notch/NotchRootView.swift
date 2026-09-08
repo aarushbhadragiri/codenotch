@@ -3,6 +3,7 @@ import SwiftUI
 struct NotchRootView: View {
     @ObservedObject var model: NotchViewModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
         // Measured rather than assumed: the panel's real size is whatever
@@ -13,6 +14,13 @@ struct NotchRootView: View {
 
             ZStack(alignment: .topLeading) {
                 Color.clear
+
+                if model.notchBlurEnabled && model.isExpanded && !reduceTransparency {
+                    notchGlass(place)
+                        .transition(.opacity)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
 
                 notch(place)
 
@@ -75,6 +83,44 @@ struct NotchRootView: View {
         .animation(motion(NotchMotion.unfold), value: model.isExpanded)
         .tint(model.accentColor.color)
         .environment(\.codenotchAccentColor, model.accentColor.color)
+    }
+
+    /// Liquid Glass belongs to the notch, not to the information card. It is
+    /// therefore a separate layer behind the notch and is bounded before the
+    /// tooltip begins. A blurred alpha mask feathers the *native glass* to
+    /// nothing; it is not a screenshot or a translucent color pretending to
+    /// blur the windows underneath it.
+    private func notchGlass(_ place: NotchPlacement) -> some View {
+        let depth = model.contentInset + NotchLayout.bodyDepth(for: model.edge)
+        let length = model.shapeLength
+        let leading = model.slack
+        let rect = NotchGlassBlurGeometry.haloRect(
+            placement: place,
+            notchLeadingInset: leading,
+            notchLength: length,
+            notchDepth: depth
+        )
+        let notchSize = NotchPlacement.panelSize(
+            edge: model.edge, length: length, depth: depth
+        )
+        let notchRect = place.rect(
+            along: leading, across: 0, length: length, depth: depth
+        )
+
+        return NativeLiquidGlass(strength: model.notchBlurStrength)
+            .frame(width: rect.width, height: rect.height)
+            .mask {
+                SideNotchShape(edge: model.edge, joining: model.joinedNotch)
+                    .fill(.white)
+                    .frame(width: notchSize.width, height: notchSize.height)
+                    .position(x: notchRect.midX - rect.minX,
+                              y: notchRect.midY - rect.minY)
+                    // The mask is what makes the glass density fall away from
+                    // the silhouette. The native view beneath it still does
+                    // the actual optical sampling and refraction.
+                    .blur(radius: depth / 4)
+            }
+            .position(x: rect.midX, y: rect.midY)
     }
 
     /// Opening and closing are not mirror images. Appearing, the arc waits its

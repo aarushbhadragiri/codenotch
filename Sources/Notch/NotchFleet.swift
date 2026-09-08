@@ -32,6 +32,8 @@ final class NotchFleet {
     private var displayPreference: DisplayPreference = .followActiveWindow
     private var resetTimeFormat: ResetTimeFormat = .automatic
     private var accentColor: AccentColorChoice = .system
+    private var notchBlurEnabled = false
+    private var notchBlurStrength = Preferences.defaultNotchBlurStrength
     /// The ⌥-drag nudge along the current edge. One value for the whole
     /// fleet, the same as `edge` itself — displays do not each get their own
     /// edge, so they do not each get their own nudge either.
@@ -132,6 +134,20 @@ final class NotchFleet {
         self.accentColor = accentColor
         for controller in controllers.values {
             controller.model.accentColor = accentColor
+        }
+    }
+
+    func apply(notchBlurEnabled enabled: Bool) {
+        notchBlurEnabled = enabled
+        for controller in controllers.values {
+            controller.model.notchBlurEnabled = enabled
+        }
+    }
+
+    func apply(notchBlurStrength strength: Double) {
+        notchBlurStrength = strength
+        for controller in controllers.values {
+            controller.model.notchBlurStrength = strength
         }
     }
 
@@ -269,6 +285,8 @@ final class NotchFleet {
         controller.model.alongOffset = alongOffset
         controller.model.resetTimeFormat = resetTimeFormat
         controller.model.accentColor = accentColor
+        controller.model.notchBlurEnabled = notchBlurEnabled
+        controller.model.notchBlurStrength = notchBlurStrength
         controller.onRefresh = onRefresh
         controller.onRefreshProvider = onRefreshProvider
         controller.onOpenSettings = onOpenSettings

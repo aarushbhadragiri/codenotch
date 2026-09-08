@@ -123,6 +123,9 @@ struct SettingsView: View {
     /// A gesture for this sitting, not a setting: the sidebar comes back on
     /// the next open, the same way a window's own sidebar toggle behaves.
     @State private var isSidebarVisible = true
+    /// Prevents a slider held against an endpoint from firing a haptic on
+    /// every tiny drag event. Moving away arms the boundary again.
+    @State private var blurStrengthIsAtBoundary = false
     /// Switching off has to reach the store's archive, not just the preference
     /// — see `UsageStore.signOut(providerID:)`.
     let signOut: (String) -> Void
@@ -415,6 +418,38 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
+                Toggle("Blur around open notch", isOn: $preferences.notchBlurEnabled)
+
+                Text("Uses macOS Liquid Glass behind the notch and fades it away before the detail popup.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if preferences.notchBlurEnabled {
+                    LabeledContent("Blur strength") {
+                        HStack(spacing: 10) {
+                            Slider(
+                                value: $preferences.notchBlurStrength,
+                                in: Preferences.notchBlurStrengthRange
+                            )
+                            .frame(minWidth: 190)
+                            .onChange(of: preferences.notchBlurStrength) { _, value in
+                                updateBlurBoundaryHaptic(value)
+                            }
+
+                            Text(blurStrengthLabel)
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                                .frame(width: 58, alignment: .trailing)
+                        }
+                    }
+
+                    Text("100% is the system default. Reduce Transparency disables the effect automatically.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
                 Picker("Edge", selection: $preferences.notchEdge) {
                     ForEach(NotchEdge.allCases) { Text($0.title).tag($0) }
                 }
@@ -490,6 +525,22 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+    }
+
+    private var blurStrengthLabel: String {
+        let value = preferences.notchBlurStrength
+        if abs(value - Preferences.defaultNotchBlurStrength) < 0.01 { return "System" }
+        return "\(Int((value * 100).rounded()))%"
+    }
+
+    private func updateBlurBoundaryHaptic(_ value: Double) {
+        let range = Preferences.notchBlurStrengthRange
+        let atBoundary = abs(value - range.lowerBound) < 0.001
+            || abs(value - range.upperBound) < 0.001
+        if atBoundary && !blurStrengthIsAtBoundary {
+            HapticFeedbackService.shared.play(.sliderBoundary)
+        }
+        blurStrengthIsAtBoundary = atBoundary
     }
 
     private var notificationsPane: some View {

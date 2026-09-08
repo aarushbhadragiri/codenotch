@@ -58,6 +58,11 @@ final class NotchViewModel: ObservableObject {
     /// Mirrors the persisted Appearance choice so the separate notch window
     /// redraws immediately when Settings changes it.
     @Published var accentColor: AccentColorChoice = .system
+    /// A native glass halo which appears only while the notch is open.
+    @Published var notchBlurEnabled = false
+    /// One is Apple's unmodified Liquid Glass recipe; the user may make it
+    /// subtler or add a denser frosted tint around that baseline.
+    @Published var notchBlurStrength: Double = Preferences.defaultNotchBlurStrength
     /// The display's own notch, when this edge has to share the bezel with one.
     ///
     /// Set by the window controller from the screen the panel is on, because

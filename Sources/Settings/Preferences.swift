@@ -94,6 +94,19 @@ final class Preferences: ObservableObject {
         didSet { defaults.set(accentColor.rawValue, forKey: Keys.accentColor) }
     }
 
+    /// Whether an open notch casts a native Liquid Glass halo into the screen.
+    @Published var notchBlurEnabled: Bool {
+        didSet { defaults.set(notchBlurEnabled, forKey: Keys.notchBlurEnabled) }
+    }
+
+    /// Relative to Apple's native glass recipe: 1 is the system default.
+    @Published var notchBlurStrength: Double {
+        didSet { defaults.set(notchBlurStrength, forKey: Keys.notchBlurStrength) }
+    }
+
+    static let notchBlurStrengthRange: ClosedRange<Double> = 0.25...2
+    static let defaultNotchBlurStrength = 1.0
+
     @Published var hapticFeedback: Bool {
         didSet { defaults.set(hapticFeedback, forKey: Keys.hapticFeedback) }
     }
@@ -196,6 +209,8 @@ final class Preferences: ObservableObject {
         static let resetTimeFormat = "resetTimeFormat"
         static let scope = "notchScope"
         static let accentColor = "accentColor"
+        static let notchBlurEnabled = "notchBlurEnabled"
+        static let notchBlurStrength = "notchBlurStrength"
         static let hapticFeedback = "hapticFeedback"
         static let hapticDetailLevel = "hapticDetailLevel"
         static let lastSeenVersion = "lastSeenVersion"
@@ -287,6 +302,12 @@ final class Preferences: ObservableObject {
         // Follow the Mac unless the user explicitly chooses a Codenotch colour.
         self.accentColor = defaults.string(forKey: Keys.accentColor)
             .flatMap(AccentColorChoice.init(rawValue:)) ?? .system
+        self.notchBlurEnabled = defaults.object(forKey: Keys.notchBlurEnabled) as? Bool ?? false
+        let storedBlurStrength = defaults.object(forKey: Keys.notchBlurStrength) as? Double
+            ?? Self.defaultNotchBlurStrength
+        self.notchBlurStrength = min(max(storedBlurStrength,
+                                         Self.notchBlurStrengthRange.lowerBound),
+                                     Self.notchBlurStrengthRange.upperBound)
         self.hapticFeedback = defaults.object(forKey: Keys.hapticFeedback) as? Bool ?? true
         self.hapticDetailLevel = defaults.string(forKey: Keys.hapticDetailLevel)
             .flatMap(HapticDetailLevel.init(rawValue:)) ?? .full
