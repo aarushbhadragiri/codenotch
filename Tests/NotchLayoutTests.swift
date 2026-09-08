@@ -484,6 +484,19 @@ final class PreferencesTests: XCTestCase {
         XCTAssertEqual(Preferences(defaults: defaults).accentColor, .pink)
     }
 
+    func testHapticsDefaultOnAndChoicesSurviveARestart() {
+        let name = "PreferencesHapticsTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.removePersistentDomain(forName: name)
+
+        XCTAssertTrue(Preferences(defaults: defaults).hapticFeedback)
+        XCTAssertEqual(Preferences(defaults: defaults).hapticDetailLevel, .full)
+        Preferences(defaults: defaults).hapticFeedback = false
+        Preferences(defaults: defaults).hapticDetailLevel = .minimal
+        XCTAssertFalse(Preferences(defaults: defaults).hapticFeedback)
+        XCTAssertEqual(Preferences(defaults: defaults).hapticDetailLevel, .minimal)
+    }
+
     func testUnknownAccentColorFallsBackToTheDevice() {
         let name = "PreferencesAccentFallbackTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: name)!

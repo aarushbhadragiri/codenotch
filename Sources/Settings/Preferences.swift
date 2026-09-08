@@ -94,6 +94,14 @@ final class Preferences: ObservableObject {
         didSet { defaults.set(accentColor.rawValue, forKey: Keys.accentColor) }
     }
 
+    @Published var hapticFeedback: Bool {
+        didSet { defaults.set(hapticFeedback, forKey: Keys.hapticFeedback) }
+    }
+
+    @Published var hapticDetailLevel: HapticDetailLevel {
+        didSet { defaults.set(hapticDetailLevel.rawValue, forKey: Keys.hapticDetailLevel) }
+    }
+
     /// Where the app itself shows up: Dock, menu bar, or nowhere.
     @Published var appPresence: AppPresence {
         didSet { defaults.set(appPresence.rawValue, forKey: Keys.presence) }
@@ -188,6 +196,8 @@ final class Preferences: ObservableObject {
         static let resetTimeFormat = "resetTimeFormat"
         static let scope = "notchScope"
         static let accentColor = "accentColor"
+        static let hapticFeedback = "hapticFeedback"
+        static let hapticDetailLevel = "hapticDetailLevel"
         static let lastSeenVersion = "lastSeenVersion"
         static let order = "providerOrder"
         static let announceSessionEnd = "announceSessionEnd"
@@ -277,6 +287,9 @@ final class Preferences: ObservableObject {
         // Follow the Mac unless the user explicitly chooses a Codenotch colour.
         self.accentColor = defaults.string(forKey: Keys.accentColor)
             .flatMap(AccentColorChoice.init(rawValue:)) ?? .system
+        self.hapticFeedback = defaults.object(forKey: Keys.hapticFeedback) as? Bool ?? true
+        self.hapticDetailLevel = defaults.string(forKey: Keys.hapticDetailLevel)
+            .flatMap(HapticDetailLevel.init(rawValue:)) ?? .full
         // Absent means nothing has been shown yet, which is true of a fresh
         // install — so the current release reads as new to it.
         self.lastSeenVersion = defaults.string(forKey: Keys.lastSeenVersion)

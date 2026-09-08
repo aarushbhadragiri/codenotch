@@ -21,9 +21,10 @@ final class NotchWindowController {
     /// One "Sign in to …" item per provider that needs a browser session.
     var signInItems: [(title: String, action: () -> Void)] = []
     /// Refetch a single provider, asked for by clicking its ring.
-    var onRefreshProvider: ((String) -> Void)?
+    var onRefreshProvider: ((String, @escaping (ProviderSnapshot?) -> Void) -> Void)?
     /// Open the settings window, asked for by clicking the handle.
     var onOpenSettings: (() -> Void)?
+    var haptics: HapticFeedbackService?
     /// An ⌥-drag on the pill settled at a new `model.alongOffset`. The
     /// controller only holds the live value; persisting it per edge is
     /// Preferences' job, the same division `apply(edge:)` already keeps.
@@ -213,6 +214,8 @@ final class NotchWindowController {
     /// edge's x — so no sign flip belongs here; adding one would make the
     /// pill run away from the cursor instead of following it.
     private func dragged(dx: CGFloat, dy: CGFloat) {
+        let distance = hypot(dx, dy)
+        haptics?.playDragBump(speed: distance * 60)
         model.alongOffset += model.edge.isVertical ? dy : dx
         relocate()
     }
@@ -372,7 +375,7 @@ final class NotchWindowController {
         let overTooltip = model.hoveredIndex
             .flatMap(tooltipRect(index:))
             .map { model.isExpanded && $0.contains(local) } ?? false
-        setExpanded(liveRect.contains(local) || overTooltip)
+        setExpanded(liveRect.contains(local) || overTooltip, enteredByPointer: true)
 
         var target: Int?
         if model.isExpanded, notchRect.contains(local) {
@@ -395,6 +398,7 @@ final class NotchWindowController {
             clearHoverWork?.cancel()
             clearHoverWork = nil
             if model.hoveredIndex != target {
+                haptics?.play(.providerChanged)
                 withAnimation(.spring(response: 0.18, dampingFraction: 0.85)) {
                     model.hoveredIndex = target
                 }
@@ -416,11 +420,12 @@ final class NotchWindowController {
 
     /// Opens on contact, folds shut after a pause — unless it has been pinned
     /// open, in which case the pointer is not what decides.
-    private func setExpanded(_ wanted: Bool) {
+    private func setExpanded(_ wanted: Bool, enteredByPointer: Bool = false) {
         if wanted {
             foldWork?.cancel()
             foldWork = nil
             guard !model.isExpanded else { return }
+            if enteredByPointer { haptics?.play(.enteredNotch) }
             withAnimation(NotchMotion.unfold) { model.isExpanded = true }
             return
         }
@@ -477,6 +482,7 @@ final class NotchWindowController {
         // cells — otherwise the cell band nearest the foot of the stack swallows
         // it and clicking the gear refetches a provider instead.
         if model.isExpanded, isOverHandle(local) {
+            haptics?.play(.settingsOpened)
             onOpenSettings?()
             return
         }
@@ -515,7 +521,11 @@ final class NotchWindowController {
         if notchRect.contains(local),
            let index = cellIndex(along: placement.along(of: local)),
            model.snapshots.indices.contains(index) {
-            onRefreshProvider?(model.snapshots[index].id)
+            haptics?.play(.refreshRequested)
+            onRefreshProvider?(model.snapshots[index].id) { [weak self] snapshot in
+                guard let snapshot else { return }
+                self?.haptics?.playRefreshCompletion(usedFraction: snapshot.usedFraction)
+            }
             return
         }
         togglePinned()

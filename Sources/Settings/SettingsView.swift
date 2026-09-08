@@ -567,6 +567,26 @@ struct SettingsView: View {
             // No title on the group: the pane's own header above already
             // says "General", and repeating it here would say it twice.
             Section {
+                Picker("Haptic feedback", selection: $preferences.hapticFeedback) {
+                    Text("Off").tag(false)
+                    Text("On").tag(true)
+                }
+                .pickerStyle(.segmented)
+
+                if preferences.hapticFeedback {
+                    Picker("Haptic detail", selection: $preferences.hapticDetailLevel) {
+                        ForEach(HapticDetailLevel.allCases) { level in
+                            Text(level.title).tag(level)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    Text("Minimal confirms deliberate actions. Full also responds to hovering, moving between rings, and dragging the notch.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
                 Toggle("Open Codenotch at login", isOn: $preferences.launchAtLogin)
                 if let problem = preferences.launchAtLoginProblem {
                     Text(problem)
@@ -1256,6 +1276,7 @@ private struct AccountRow: View {
         Binding(
             get: { preferences.isConnected(provider.id) },
             set: { wantsOn in
+                HapticFeedbackService.shared.play(.integrationToggled)
                 if wantsOn {
                     preferences.setConnected(true, for: provider.id)
                     // After the switch, not before: where it belongs depends on

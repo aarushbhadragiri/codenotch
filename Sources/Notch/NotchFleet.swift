@@ -39,8 +39,9 @@ final class NotchFleet {
 
     /// Hooked up by the app delegate; driven by the notch's own chrome.
     var onRefresh: (() -> Void)?
-    var onRefreshProvider: ((String) -> Void)?
+    var onRefreshProvider: ((String, @escaping (ProviderSnapshot?) -> Void) -> Void)?
     var onOpenSettings: (() -> Void)?
+    var haptics: HapticFeedbackService?
     var signInItems: [(title: String, action: () -> Void)] = []
     /// An ⌥-drag on any one panel settled at a new offset. Persisting it is
     /// Preferences' job, same division `apply(edge:)` already keeps.
@@ -271,6 +272,7 @@ final class NotchFleet {
         controller.onRefresh = onRefresh
         controller.onRefreshProvider = onRefreshProvider
         controller.onOpenSettings = onOpenSettings
+        controller.haptics = haptics
         controller.model.onOpenSettings = onOpenSettings
         controller.onReposition = onReposition
         controller.signInItems = signInItems

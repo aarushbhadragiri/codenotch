@@ -54,6 +54,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // sink below delivers on the next run loop turn, by which time the
         // notch would already have flashed on the default edge.
         let fleet = NotchFleet(scope: preferences.notchScope, edge: preferences.notchEdge)
+        let haptics = HapticFeedbackService.shared
+        haptics.isEnabled = preferences.hapticFeedback
+        haptics.detailLevel = preferences.hapticDetailLevel
+        fleet.haptics = haptics
         self.notchFleet = fleet
 
         // `CODENOTCH_DEMO=1` puts the design frame's three providers on screen
@@ -116,7 +120,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 },
                 retry: { [weak store] in store?.reauthorize(providerID: $0) }
             )
-            fleet.onOpenSettings = { [weak settings] in settings?.show() }
+            fleet.onOpenSettings = { [weak settings] in
+                haptics.play(.settingsOpened)
+                settings?.show()
+            }
             self.settings = settings
 
             // What changed, once per version — including on a fresh install,
@@ -142,7 +149,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6, execute: introduce)
             }
 
-            let statusItem = StatusItemController { [weak settings] in settings?.show() }
+            let statusItem = StatusItemController { [weak settings] in
+                haptics.play(.settingsOpened)
+                settings?.show()
+            }
             self.statusItem = statusItem
             statusItem.onRefreshProvider = { [weak store] id in store?.refresh(providerID: id) }
             statusItem.onRefreshAll = { [weak store] in store?.refreshNow() }
@@ -195,6 +205,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 .sink { [weak fleet] in fleet?.apply(accentColor: $0) }
                 .store(in: &cancellables)
 
+            preferences.$hapticFeedback
+                .receive(on: RunLoop.main)
+                .sink { haptics.isEnabled = $0 }
+                .store(in: &cancellables)
+
+            preferences.$hapticDetailLevel
+                .receive(on: RunLoop.main)
+                .sink { haptics.detailLevel = $0 }
+                .store(in: &cancellables)
+
             preferences.$disconnectedProviders
                 .receive(on: RunLoop.main)
                 .sink { [weak store] in store?.disconnected = $0 }
@@ -238,7 +258,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 .store(in: &cancellables)
             store.start()
             fleet.onRefresh = { [weak store] in store?.refreshNow() }
-            fleet.onRefreshProvider = { [weak store] id in store?.refresh(providerID: id) }
+            fleet.onRefreshProvider = { [weak store] id, completion in
+                guard let store else { completion(nil); return }
+                store.refresh(providerID: id, completion: completion)
+            }
             store.$refreshing
                 .receive(on: RunLoop.main)
                 .sink { [weak fleet] ids in fleet?.setRefreshing(ids) }
