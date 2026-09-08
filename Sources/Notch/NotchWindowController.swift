@@ -82,6 +82,7 @@ final class NotchWindowController {
     /// come back. The cursor poll is already running; noticing there costs one
     /// rect comparison every 0.3s and needs no new machinery.
     private var lastVisibleFrame: CGRect?
+    private var optionDragHasStarted = false
 
     func show() {
         relocate()
@@ -166,6 +167,7 @@ final class NotchWindowController {
             panel.onDrag = { [weak self] dx, dy in self?.dragged(dx: dx, dy: dy) }
             panel.onDragEnd = { [weak self] in
                 guard let self else { return }
+                self.optionDragHasStarted = false
                 self.onReposition?(self.model.alongOffset)
             }
 
@@ -215,7 +217,12 @@ final class NotchWindowController {
     /// pill run away from the cursor instead of following it.
     private func dragged(dx: CGFloat, dy: CGFloat) {
         let distance = hypot(dx, dy)
-        haptics?.playDragBump(speed: distance * 60)
+        if optionDragHasStarted {
+            haptics?.playDragBump(speed: distance * 60)
+        } else {
+            optionDragHasStarted = true
+            haptics?.play(.dragBump(.medium))
+        }
         model.alongOffset += model.edge.isVertical ? dy : dx
         relocate()
     }
