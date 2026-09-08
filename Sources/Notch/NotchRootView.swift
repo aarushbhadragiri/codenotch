@@ -18,7 +18,14 @@ struct NotchRootView: View {
                 // A backdrop layer belonging only to the notch. The popup is
                 // drawn later, so its text and silhouette stay crisp.
                 if model.hoverBlur && !model.isAlwaysOn && !reduceTransparency {
-                    NotchBackdropBlur()
+                    ZStack {
+                        NotchBackdropBlur()
+                        // The system material supplies the baseline blur. A
+                        // dark veil then makes it progressively denser, with
+                        // the maximum becoming opaque while sharing the same
+                        // feathered silhouette.
+                        Color.black.opacity(model.hoverBlurStrength)
+                    }
                         .mask {
                             SideNotchShape(edge: model.edge, joining: model.joinedNotch)
                                 .fill(.white)
@@ -36,6 +43,7 @@ struct NotchRootView: View {
                                 .padding(.top, model.contentInset)
                         }
                         .opacity(model.isExpanded ? 1 : 0)
+                        .animation(.easeOut(duration: 0.16), value: model.hoverBlurStrength)
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
                 }

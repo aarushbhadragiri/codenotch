@@ -83,6 +83,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             controller.model.edge = preferences.notchEdge
             controller.model.accentColor = preferences.accentColor
             controller.model.hoverBlur = preferences.hoverBlur
+            controller.model.hoverBlurStrength = preferences.hoverBlurStrength
 
             let updater = Updater()
             self.updater = updater
@@ -156,6 +157,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             preferences.$hoverBlur
                 .receive(on: RunLoop.main)
                 .sink { [weak controller] in controller?.model.hoverBlur = $0 }
+                .store(in: &cancellables)
+
+            preferences.$hoverBlurStrength
+                .receive(on: RunLoop.main)
+                .sink { [weak controller] in controller?.model.hoverBlurStrength = $0 }
                 .store(in: &cancellables)
 
             preferences.$disconnectedProviders

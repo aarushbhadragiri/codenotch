@@ -44,6 +44,7 @@ final class NotchViewModel: ObservableObject {
     /// redraws immediately when Settings changes it.
     @Published var accentColor: AccentColorChoice = .system
     @Published var hoverBlur = true
+    @Published var hoverBlurStrength: Double = 0
     /// The display's own notch, when this edge has to share the bezel with one.
     ///
     /// Set by the window controller from the screen the panel is on, because

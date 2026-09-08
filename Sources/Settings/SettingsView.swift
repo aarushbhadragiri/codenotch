@@ -70,6 +70,21 @@ struct SettingsView: View {
                         Text("On").tag(true)
                     }
                     .pickerStyle(.segmented)
+
+                    if preferences.hoverBlur {
+                        LabeledContent("Strength") {
+                            Slider(value: $preferences.hoverBlurStrength, in: 0...1)
+                        }
+
+                        HStack {
+                            Text("Current blur")
+                            Spacer()
+                            Text("Opaque")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, 120)
+                    }
                 }
 
                 Picker("Edge", selection: $preferences.notchEdge) {

@@ -32,7 +32,13 @@ final class Preferences: ObservableObject {
     }
 
     @Published var hoverBlur: Bool {
-        didSet { defaults.set(hoverBlur, forKey: "hoverBlur") }
+        didSet { defaults.set(hoverBlur, forKey: Keys.hoverBlur) }
+    }
+
+    /// Zero preserves the original soft blur; one progressively darkens its
+    /// feather until the area nearest the notch is opaque.
+    @Published var hoverBlurStrength: Double {
+        didSet { defaults.set(hoverBlurStrength, forKey: Keys.hoverBlurStrength) }
     }
 
     /// Where the app itself shows up: Dock, menu bar, or nowhere.
@@ -69,6 +75,8 @@ final class Preferences: ObservableObject {
         static let presence = "appPresence"
         static let edge = "notchEdge"
         static let accentColor = "accentColor"
+        static let hoverBlur = "hoverBlur"
+        static let hoverBlurStrength = "hoverBlurStrength"
         static let lastSeenVersion = "lastSeenVersion"
     }
 
@@ -106,7 +114,10 @@ final class Preferences: ObservableObject {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        self.hoverBlur = defaults.object(forKey: "hoverBlur") as? Bool ?? true
+        self.hoverBlur = defaults.object(forKey: Keys.hoverBlur) as? Bool ?? true
+        self.hoverBlurStrength = min(
+            max(defaults.object(forKey: Keys.hoverBlurStrength) as? Double ?? 0, 0), 1
+        )
         self.isFirstLaunch = !defaults.bool(forKey: Keys.hasLaunched)
         defaults.set(true, forKey: Keys.hasLaunched)
         self.disconnectedProviders = Set(defaults.stringArray(forKey: Keys.disconnected) ?? [])
