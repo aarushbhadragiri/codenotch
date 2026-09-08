@@ -20,9 +20,10 @@ final class NotchWindowController {
     /// One "Sign in to …" item per provider that needs a browser session.
     var signInItems: [(title: String, action: () -> Void)] = []
     /// Refetch a single provider, asked for by clicking its ring.
-    var onRefreshProvider: ((String) -> Void)?
+    var onRefreshProvider: ((String, @escaping (Bool) -> Void) -> Void)?
     /// Open the settings window, asked for by clicking the handle.
     var onOpenSettings: (() -> Void)?
+    var haptics: HapticFeedbackService?
 
     private var panel: NotchPanel?
     private var hostingView: NotchHostingView<NotchRootView>?
@@ -299,7 +300,7 @@ final class NotchWindowController {
         let overTooltip = model.hoveredIndex
             .flatMap(tooltipRect(index:))
             .map { model.isExpanded && $0.contains(local) } ?? false
-        setExpanded(liveRect.contains(local) || overTooltip)
+        setExpanded(liveRect.contains(local) || overTooltip, enteredByPointer: true)
 
         var target: Int?
         if model.isExpanded, notchRect.contains(local) {
@@ -322,6 +323,7 @@ final class NotchWindowController {
             clearHoverWork?.cancel()
             clearHoverWork = nil
             if model.hoveredIndex != target {
+                haptics?.play(model.hoveredIndex == nil ? .tooltipHovered : .providerChanged)
                 withAnimation(.spring(response: 0.18, dampingFraction: 0.85)) {
                     model.hoveredIndex = target
                 }
@@ -343,12 +345,14 @@ final class NotchWindowController {
 
     /// Opens on contact, folds shut after a pause — unless it has been pinned
     /// open, in which case the pointer is not what decides.
-    private func setExpanded(_ wanted: Bool) {
+    private func setExpanded(_ wanted: Bool, enteredByPointer: Bool = false) {
         if wanted {
             foldWork?.cancel()
             foldWork = nil
             guard !model.isExpanded else { return }
+            if enteredByPointer { haptics?.play(.enteredNotch) }
             withAnimation(NotchMotion.unfold) { model.isExpanded = true }
+            haptics?.play(.expanded)
             return
         }
 
@@ -415,7 +419,11 @@ final class NotchWindowController {
         if notchRect.contains(local),
            let index = cellIndex(along: placement.along(of: local)),
            model.snapshots.indices.contains(index) {
-            onRefreshProvider?(model.snapshots[index].id)
+            haptics?.play(.providerRefreshRequested)
+            onRefreshProvider?(model.snapshots[index].id) { [weak self] succeeded in
+                guard succeeded else { return }
+                self?.haptics?.play(.manualRefreshSucceeded)
+            }
             return
         }
         togglePinned()

@@ -84,6 +84,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             controller.model.accentColor = preferences.accentColor
             controller.model.hoverBlur = preferences.hoverBlur
             controller.model.hoverBlurStrength = preferences.hoverBlurStrength
+            let haptics = HapticFeedbackService(
+                isEnabled: preferences.hapticFeedback,
+                detailLevel: preferences.hapticDetailLevel
+            )
+            controller.haptics = haptics
 
             let updater = Updater()
             self.updater = updater
@@ -164,6 +169,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 .sink { [weak controller] in controller?.model.hoverBlurStrength = $0 }
                 .store(in: &cancellables)
 
+            preferences.$hapticFeedback
+                .receive(on: RunLoop.main)
+                .sink { haptics.isEnabled = $0 }
+                .store(in: &cancellables)
+
+            preferences.$hapticDetailLevel
+                .receive(on: RunLoop.main)
+                .sink { haptics.detailLevel = $0 }
+                .store(in: &cancellables)
+
             preferences.$disconnectedProviders
                 .receive(on: RunLoop.main)
                 .sink { [weak store] in store?.disconnected = $0 }
@@ -180,7 +195,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 .store(in: &cancellables)
             store.start()
             controller.onRefresh = { [weak store] in store?.refreshNow() }
-            controller.onRefreshProvider = { [weak store] id in store?.refresh(providerID: id) }
+            controller.onRefreshProvider = { [weak store] id, completion in
+                guard let store else {
+                    completion(false)
+                    return
+                }
+                store.refresh(providerID: id, completion: completion)
+            }
             store.$refreshing
                 .receive(on: RunLoop.main)
                 .sink { [weak controller] ids in controller?.model.refreshing = ids }

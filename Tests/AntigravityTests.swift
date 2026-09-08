@@ -677,11 +677,8 @@ final class AntigravityFallbackTests: XCTestCase {
 }
 
 final class AuthorCreditTests: XCTestCase {
-    /// Pinned because a wrong handle in a credit is worse than none, and it is
-    /// the kind of string nobody re-reads once it looks right.
-    func testTheCreditPointsAtTheRightAccount() {
-        XCTAssertEqual(SettingsView.authorURL.absoluteString, "https://x.com/hivinz_")
-        XCTAssertEqual(SettingsView.authorURL.scheme, "https")
+    func testTheCreditUsesTheMacAttribution() {
+        XCTAssertEqual(SettingsView.creditText, "App designed and developed for mac")
     }
 }
 

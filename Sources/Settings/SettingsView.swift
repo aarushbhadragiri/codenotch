@@ -127,6 +127,26 @@ struct SettingsView: View {
             // without being asked, and one switch under its own header looked
             // like an oversight rather than a section.
             Section("General") {
+                Picker("Haptic feedback", selection: $preferences.hapticFeedback) {
+                    Text("Off").tag(false)
+                    Text("On").tag(true)
+                }
+                .pickerStyle(.segmented)
+
+                if preferences.hapticFeedback {
+                    Picker("Haptic detail", selection: $preferences.hapticDetailLevel) {
+                        ForEach(HapticDetailLevel.allCases) { level in
+                            Text(level.title).tag(level)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    Text("Minimal confirms refresh actions. Full also responds to opening and moving through the notch.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
                 Toggle("Open Codenotch at login", isOn: $preferences.launchAtLogin)
                 if let problem = preferences.launchAtLoginProblem {
                     Text(problem)
@@ -188,16 +208,7 @@ struct SettingsView: View {
     private var credit: some View {
         VStack(spacing: 0) {
             Divider()
-            HStack(spacing: 4) {
-                Text("App designed and developed by")
-                // Only the handle is the link, so the line reads as a sentence
-                // rather than as a button with a sentence attached.
-                Link("@hivinz_", destination: SettingsView.authorURL)
-                    // A link that does not change the pointer reads as text.
-                    .onHover { inside in
-                        if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
-                    }
-            }
+            Text(Self.creditText)
             .font(.caption)
             .foregroundStyle(.secondary)
             .padding(.vertical, 10)
@@ -206,7 +217,7 @@ struct SettingsView: View {
         .background(.ultraThinMaterial)
     }
 
-    static let authorURL = URL(string: "https://x.com/hivinz_")!
+    static let creditText = "App designed and developed for mac"
 
     /// Narrower than the tabbed version needed: without a row of tab titles to
     /// fit, the width is set by the account rows alone.

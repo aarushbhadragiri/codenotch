@@ -192,8 +192,8 @@ final class UsageStore: ObservableObject {
         defer { refreshing = [] }
         var next: [ProviderSnapshot] = []
         for provider in live {
-            if let fresh = await snapshot(from: provider, version: versions[provider.id]) {
-                next.append(fresh)
+            if let result = await snapshot(from: provider, version: versions[provider.id]) {
+                next.append(result.snapshot)
             }
         }
         // An earlier result can have been disconnected while a later provider
@@ -206,24 +206,31 @@ final class UsageStore: ObservableObject {
     /// Deliberately not routed through `refreshNow`: asking one cell for a fresh
     /// reading should not spend every other provider's rate-limit budget, and
     /// Claude's in particular is easy to exhaust.
-    func refresh(providerID: String) {
+    func refresh(providerID: String, completion: ((Bool) -> Void)? = nil) {
         guard let provider = providers.first(where: { $0.id == providerID }),
               !disconnected.contains(providerID),
-              !refreshing.contains(providerID) else { return }
+              !refreshing.contains(providerID) else {
+            completion?(false)
+            return
+        }
 
         refreshing.insert(providerID)
         let version = connectionVersions[providerID]
         Task { [weak self] in
             guard let self else { return }
             defer { self.refreshing.remove(providerID) }
-            guard let fresh = await self.snapshot(from: provider, version: version) else { return }
+            guard let result = await self.snapshot(from: provider, version: version) else {
+                completion?(false)
+                return
+            }
             if let index = self.snapshots.firstIndex(where: { $0.id == providerID }) {
-                self.snapshots[index] = fresh
+                self.snapshots[index] = result.snapshot
             }
             self.lastAttempt = Date()
             // A beat of visible work even when the answer was instant: a spinner
             // that flashes for one frame reads as a glitch, not as a refresh.
             try? await Task.sleep(nanoseconds: 380_000_000)
+            completion?(result.succeeded)
         }
     }
 
@@ -320,7 +327,12 @@ final class UsageStore: ObservableObject {
             && connectionVersions[providerID] == version
     }
 
-    private func snapshot(from provider: UsageProvider, version: UUID?) async -> ProviderSnapshot? {
+    private struct SnapshotResult {
+        let snapshot: ProviderSnapshot
+        let succeeded: Bool
+    }
+
+    private func snapshot(from provider: UsageProvider, version: UUID?) async -> SnapshotResult? {
         // A provider may have been switched off while waiting behind another
         // provider in the serial refresh. Do not read its credential at all.
         guard isCurrent(provider.id, version: version) else { return nil }
@@ -331,11 +343,12 @@ final class UsageStore: ObservableObject {
             archive.save(lastGood)
             refusedAccess.remove(provider.id)
             Log.usage.debug("\(provider.id, privacy: .public): \(fresh.windows.count) window(s)")
-            return fresh
+            return SnapshotResult(snapshot: fresh, succeeded: true)
         } catch {
             guard isCurrent(provider.id, version: version) else { return nil }
             Log.usage.error("\(provider.id, privacy: .public) failed: \(String(describing: error), privacy: .public)")
-            return degraded(provider: provider, error: error)
+            return SnapshotResult(snapshot: degraded(provider: provider, error: error),
+                                  succeeded: false)
         }
     }
 
