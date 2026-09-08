@@ -29,6 +29,9 @@ struct ProviderRing: View {
         isBlocked ? .exhausted : UsageBand.band(for: usedFraction ?? 0)
     }
     private var sweep: CGFloat { CGFloat(min(max(usedFraction ?? 0, 0), 1)) }
+    private var progressColor: Color {
+        UsageBand.providerRingColor(for: usedFraction ?? 0, accent: accentColor)
+    }
 
     var body: some View {
         ZStack {
@@ -44,7 +47,7 @@ struct ProviderRing: View {
                         .inset(by: NotchLayout.trackStroke / 2)
                         .trim(from: 0, to: sweep)
                         .stroke(
-                            band.color(accent: accentColor),
+                            progressColor,
                             style: StrokeStyle(lineWidth: NotchLayout.progressStroke, lineCap: .round)
                         )
                         // Refreshing spins the reading itself rather than
@@ -55,7 +58,7 @@ struct ProviderRing: View {
                         // A ring that snaps to a new value reads as a glitch; one
                         // that sweeps reads as a measurement being taken.
                         .animation(NotchMotion.reading, value: sweep)
-                        .animation(NotchMotion.reading, value: band)
+                        .animation(NotchMotion.reading, value: progressColor)
                 }
 
                 ProviderGlyphView(glyph: glyph)

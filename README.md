@@ -119,7 +119,8 @@ minutes shown when less than an hour remains.
 
 Appearance also carries the ring's accent colour. The device accent is the
 default; fixed presets are available for pink, red, orange, yellow, green,
-teal, blue, indigo, purple and off-white.
+teal, blue, indigo, purple and off-white. A provider ring keeps that accent at
+every usage level below 100%, then changes to white when the limit is exhausted.
 
 An optional Liquid Glass halo can follow the open notch. It uses macOS's native
 glass effect, feathers away over half the notch's depth, and stays behind the

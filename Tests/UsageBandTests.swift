@@ -32,4 +32,14 @@ final class UsageBandTests: XCTestCase {
         XCTAssertEqual(UsageBand.critical.color(accent: accent), Palette.critical)
         XCTAssertEqual(UsageBand.exhausted.color(accent: accent), Palette.critical)
     }
+
+    func testProviderRingStaysAccentUntilItIsFullyExhausted() {
+        let accent = Color.pink
+        XCTAssertEqual(UsageBand.providerRingColor(for: 0, accent: accent), accent)
+        XCTAssertEqual(UsageBand.providerRingColor(for: 0.50, accent: accent), accent)
+        XCTAssertEqual(UsageBand.providerRingColor(for: 0.75, accent: accent), accent)
+        XCTAssertEqual(UsageBand.providerRingColor(for: 0.9999, accent: accent), accent)
+        XCTAssertEqual(UsageBand.providerRingColor(for: 1, accent: accent), Palette.textPrimary)
+        XCTAssertEqual(UsageBand.providerRingColor(for: 1.4, accent: accent), Palette.textPrimary)
+    }
 }
