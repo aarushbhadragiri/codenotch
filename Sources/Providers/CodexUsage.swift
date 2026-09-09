@@ -1,16 +1,23 @@
 import Foundation
 
-/// Only the account's main rate-limit windows belong in the usage rings —
-/// `additional_rate_limits` and `code_review_rate_limit` meter something else
-/// and are deliberately left out.
+/// The account's main rate-limit windows drive the usage ring. Luna Reserve is
+/// the one additional allowance shown in the tooltip, and only after a regular
+/// window is exhausted, which is when the reserve can actually be used.
 enum CodexUsage {
     private struct Response: Decodable {
         let rate_limit: RateLimit?
+        let additional_rate_limits: [AdditionalRateLimit]?
     }
 
     private struct RateLimit: Decodable {
+        let allowed: Bool?
         let primary_window: Window?
         let secondary_window: Window?
+    }
+
+    private struct AdditionalRateLimit: Decodable {
+        let limit_name: String?
+        let rate_limit: RateLimit?
     }
 
     private struct Window: Decodable {
@@ -48,7 +55,39 @@ enum CodexUsage {
         guard !windows.isEmpty else {
             throw UsageProviderError.nothingMetered("Codex reported no usage windows")
         }
+
+        // The server calls Luna's fallback allowance `gpt-reserve`. It is not
+        // another regular limit, so showing it while the plan still has room
+        // would imply that work is already drawing from it. Once any regular
+        // window reaches 100%, the same row vocabulary as the 5h and weekly
+        // limits makes the fallback legible without letting it drive the ring.
+        if windows.contains(where: { ($0.usedFraction ?? 0) >= 1 }),
+           let reserve = response.additional_rate_limits?.first(where: {
+               $0.limit_name?.lowercased() == "gpt-reserve"
+           }),
+           reserve.rate_limit?.allowed != false,
+           let reserveWindow = reserve.rate_limit?.primary_window,
+           let percent = reserveWindow.used_percent {
+            let resetsAt = reserveWindow.reset_at.map { Date(timeIntervalSince1970: $0) }
+                ?? reserveWindow.reset_after_seconds.map { now.addingTimeInterval($0) }
+            windows.append(LimitWindow(
+                id: "luna-reserve",
+                label: "Luna Reserve Credits",
+                usedFraction: percent / 100,
+                resetsAt: resetsAt
+            ))
+        }
         return windows
+    }
+
+    /// Ordinarily the first regular window remains the ring's stable subject.
+    /// If a longer regular window is the one that blocks work, it becomes the
+    /// headline at exactly 100% so the ring honestly reports the exhausted
+    /// regular allowance. Luna Reserve is never eligible to be the headline.
+    static func headlineID(in windows: [LimitWindow]) -> String? {
+        let regular = windows.filter { $0.id != "luna-reserve" }
+        return regular.first(where: { ($0.usedFraction ?? 0) >= 1 })?.id
+            ?? regular.first?.id
     }
 
     /// The plan an account is on decides what its primary window actually is

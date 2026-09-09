@@ -23,6 +23,64 @@ final class CodexUsageTests: XCTestCase {
         XCTAssertEqual(result.first?.resetsAt, Date(timeIntervalSince1970: 1_800_001_000))
     }
 
+    func testLunaReserveStaysHiddenWhileRegularUsageRemains() throws {
+        let result = try windows("""
+        {"rate_limit":{
+          "primary_window":{"used_percent":99,"limit_window_seconds":18000},
+          "secondary_window":{"used_percent":20,"limit_window_seconds":604800}},
+         "additional_rate_limits":[{"limit_name":"gpt-reserve","rate_limit":{
+          "allowed":true,"primary_window":{"used_percent":35,"limit_window_seconds":604800,
+          "reset_at":1800500000}}}]}
+        """)
+
+        XCTAssertEqual(result.map(\.id), ["primary", "secondary"])
+    }
+
+    func testLunaReserveAppearsAfterARegularLimitIsExhausted() throws {
+        let result = try windows("""
+        {"rate_limit":{
+          "primary_window":{"used_percent":100,"limit_window_seconds":18000},
+          "secondary_window":{"used_percent":20,"limit_window_seconds":604800}},
+         "additional_rate_limits":[{"limit_name":"gpt-reserve","rate_limit":{
+          "allowed":true,"primary_window":{"used_percent":35,"limit_window_seconds":604800,
+          "reset_at":1800500000}}}]}
+        """)
+
+        XCTAssertEqual(result.map(\.id), ["primary", "secondary", "luna-reserve"])
+        let reserve = try XCTUnwrap(result.last)
+        XCTAssertEqual(reserve.label, "Luna Reserve Credits")
+        XCTAssertEqual(reserve.usedFraction ?? -1, 0.35, accuracy: 0.0001)
+        XCTAssertEqual(reserve.resetsAt, Date(timeIntervalSince1970: 1_800_500_000))
+    }
+
+    func testUnavailableOrUnrelatedAdditionalLimitsAreNotShown() throws {
+        let result = try windows("""
+        {"rate_limit":{"primary_window":{"used_percent":100,"limit_window_seconds":18000}},
+         "additional_rate_limits":[
+          {"limit_name":"gpt-reserve","rate_limit":{"allowed":false,
+           "primary_window":{"used_percent":10,"limit_window_seconds":604800}}},
+          {"limit_name":"code-review","rate_limit":{"allowed":true,
+           "primary_window":{"used_percent":80,"limit_window_seconds":604800}}}]}
+        """)
+
+        XCTAssertEqual(result.map(\.id), ["primary"])
+    }
+
+    func testExhaustedRegularWindowDrivesTheRingAndReserveNeverDoes() throws {
+        let result = try windows("""
+        {"rate_limit":{
+          "primary_window":{"used_percent":40,"limit_window_seconds":18000},
+          "secondary_window":{"used_percent":100,"limit_window_seconds":604800}},
+         "additional_rate_limits":[{"limit_name":"gpt-reserve","rate_limit":{
+          "allowed":true,"primary_window":{"used_percent":35,"limit_window_seconds":604800}}}]}
+        """)
+
+        XCTAssertEqual(CodexUsage.headlineID(in: result), "secondary")
+        XCTAssertEqual(result.first(where: { $0.id == CodexUsage.headlineID(in: result) })?.usedFraction,
+                       1)
+        XCTAssertNotEqual(CodexUsage.headlineID(in: result), "luna-reserve")
+    }
+
     /// The reported case: a free-plan account's primary window was 30 days,
     /// not 5 hours or 7 — recorded from a live request. The old parser only
     /// recognised two fixed durations and silently dropped anything else,
@@ -277,4 +335,3 @@ final class UsageBlockTests: XCTestCase {
         )
     }
 }
-
